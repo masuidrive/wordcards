@@ -1,0 +1,25 @@
+GEM
+  remote: http://rubygems.org/
+  specs:
+    alchemy_api (0.1.2)
+      monster_mash (>= 0.1.1)
+    ffi (1.0.11)
+    mime-types (1.18)
+    monster_mash (0.3.0)
+      typhoeus (>= 0.3.3)
+      typhoeus (>= 0.3.3)
+    progressbar (0.11.0)
+    rubyzip (0.9.8)
+    treat (1.0.6)
+      progressbar (>= 0.10.0)
+      rubyzip (>= 0.9.6.1)
+    typhoeus (0.4.2)
+      ffi (~> 1.0)
+      mime-types (~> 1.18)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  alchemy_api
+  treat
