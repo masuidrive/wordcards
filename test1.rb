@@ -24,19 +24,19 @@ require 'open-uri'
 
 
 #url = "http://guides.rubyonrails.org/getting_started.html"
-#url = "https://github.com/rails/rails/blob/master/activerecord/CHANGELOG.md"
-url = "http://www.ruby-lang.org/en/"
+url = "https://github.com/rails/rails/blob/master/activerecord/CHANGELOG.md"
+#url = "http://www.ruby-lang.org/en/"
 #url = 'sample1.txt'
 
-html = open(url).read.encode("UTF-8")
+html = open(url).read.encode("UTF-8", :invalid => :replace, :undef => :replace, :replace => ' ')
 original_text, title = ExtractContent::analyse(html)
 if original_text
-  original_text.gsub!(/\r*\n+/,'. ')
+  original_text = original_text.split(/\r*\n+/)
 else
   original_text = html
 end
 puts "--------"
-puts original_text
+puts original_text.join("\n")
 puts "--------"
 puts ""
 
@@ -86,9 +86,10 @@ end
 
 
 @word_counters_coll.find({}, {:limit => 100}).sort(:counter => :desc).each do |wc|
-  puts "#{wc['counter']}: #{wc['base_form']}"
+  puts "\# #{wc['counter']}: #{wc['base_form']}"
   @tokens_coll.find({:_id => {'$in' => wc['tokens'][0..1]}}).each do |t|
     s = @sentences_coll.find_one(t['sentence'])
-    puts " - #{s['original_text']}"
+    puts "- #{s['original_text']}"
   end
+  puts ""
 end
