@@ -1,55 +1,94 @@
 require 'rubygems'
 require './extractcontent'
+require './tokenize'
+require './stop_words'
+require 'mongo'
 require 'open-uri'
-require 'stanford-core-nlp'
-StanfordCoreNLP.jvm_args = ['-Xmx3g']
 
+@conn = Mongo::Connection.new
+@db   = @conn['sample1']
 
-stop_words = %w(a all at as and by or on into from in to for the with it you he she they I we will of this that be can)
-# ruby stop words
-stop_words += %w(rb gem class ensure nil self when def false not super while for or then  and do if redo true line begin else in  undef file break elsif module retry unless encoding case end next return until)
-stop_words += %w(html css href tag web form id link db url log doc URL HTML)
-stop_words += open('stopwords1.txt').read.split(/\n/).map{|s| s.strip} rescue []
-stop_words += open('stopwords2.txt').read.split(/\n/).map{|s| s.strip} rescue []
-stop_words += open('stopwords3.txt').read.split(/\n/).map{|s| s.strip} rescue []
-stop_words.uniq!
+@docs_coll = @db['documents']
+@sentences_coll = @db['sentences']
+@tokens_coll = @db['tokens']
+@words_coll = @db['words']
+@word_counters_coll = @db['word_counters']
 
-StanfordCoreNLP.use(:english)
-#StanfordCoreNLP.set_model('pos.model', 'english-left3words-distsim.tagger')
-#StanfordCoreNLP.set_model('parser.model', 'englishPCFG.ser.gz')
-#StanfordCoreNLP.load_class('MaxentTagger', 'edu.stanford.nlp.tagger') 
+@docs_coll.remove
+@sentences_coll.remove
+@tokens_coll.remove
+@words_coll.remove
+@word_counters_coll.remove
+@word_counters_coll.create_index(:word, :unique => true)
+@word_counters_coll.create_index([[:counter, -1]])
 
-
-pipeline = StanfordCoreNLP.load(:tokenize, :ssplit, :pos, :lemma, :parse)
 
 #url = "http://guides.rubyonrails.org/getting_started.html"
-url = "https://github.com/rails/rails/blob/master/activerecord/CHANGELOG.md"
-#url = "http://www.ruby-lang.org/en/"
+#url = "https://github.com/rails/rails/blob/master/activerecord/CHANGELOG.md"
+url = "http://www.ruby-lang.org/en/"
+#url = 'sample1.txt'
 
 html = open(url).read.encode("UTF-8")
 original_text, title = ExtractContent::analyse(html)
+if original_text
+  original_text.gsub!(/\r*\n+/,'. ')
+else
+  original_text = html
+end
+puts "--------"
+puts original_text
+puts "--------"
+puts ""
 
-text = StanfordCoreNLP::Text.new(original_text)
-#text = StanfordCoreNLP::Text.new("This is a pen. I used it.")
-pipeline.annotate(text)
+tokenizer = TextTokenizer.new
+doc = tokenizer.tokenize(original_text, title)
+doc_id = @docs_coll.insert({:url => url, :title => title})
 
-words = []
-text.get(:tokens).each do |token|
-  base_form = token.get(:lemma).to_s
-  base_form.downcase! if /^[A-Z][a-z]+$/.match(base_form)
-  words << base_form if /^[a-z]{2,20}$/i.match(base_form)
+doc[:sentences].each do |s|
+  sentence_id = s[:_id] = BSON::ObjectId.new
+  word_keys = []
+  s[:tokens].each do |t|
+    word_key = [t[:part_of_speech][0],t[:base_form]].join(':')
+    unless stop_words.include?(t[:base_form]) || word_keys.include?(word_key)
+      exists_word = @words_coll.find_one(:word_key => word_key)
+      word_id = if exists_word
+        exists_word['_id']
+      else
+        @words_coll.insert({:word_key => word_key})
+      end
+      token_id = @tokens_coll.insert({
+        :word => word_id,
+        :base_form => t[:base_form],
+        :part_of_speech => t[:part_of_speech],
+        :sentence => sentence_id,
+        :sentence_token_offset => t[:token_begin],
+        :sentence_token_length => t[:token_length]
+      })
+      @word_counters_coll.insert({
+        :word => word_id,
+        :base_form => t[:base_form],
+        :part_of_speech => t[:part_of_speech],
+        :tokens => [],
+        :counter => 0
+      })
+      @word_counters_coll.update({
+        :word => word_id
+      },
+      {
+        '$inc' => {:counter => 1},
+        '$push' => {:tokens => token_id}
+      })
+      word_keys << word_key
+    end
+  end
+  @sentences_coll.insert s
 end
 
-word_count = Hash.new(0)
-(words - stop_words).each do |w|
-  word_count[w] += 1
+
+@word_counters_coll.find({}, {:limit => 100}).sort(:counter => :desc).each do |wc|
+  puts "#{wc['counter']}: #{wc['base_form']}"
+  @tokens_coll.find({:_id => {'$in' => wc['tokens'][0..1]}}).each do |t|
+    s = @sentences_coll.find_one(t['sentence'])
+    puts " - #{s['original_text']}"
+  end
 end
-
-puts words.join(' ')
-puts "-----"
-word_count.to_a.sort{|a, b| a[1] <=> b[1]}.reverse.each do |w|
-  puts "%4d: %s" % [w[1], w[0]]
-end
-
-
-#end

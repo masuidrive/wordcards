@@ -1,25 +1,23 @@
 GEM
   remote: http://rubygems.org/
   specs:
-    alchemy_api (0.1.2)
-      monster_mash (>= 0.1.1)
-    ffi (1.0.11)
-    mime-types (1.18)
-    monster_mash (0.3.0)
-      typhoeus (>= 0.3.3)
-      typhoeus (>= 0.3.3)
-    progressbar (0.11.0)
-    rubyzip (0.9.8)
-    treat (1.0.6)
-      progressbar (>= 0.10.0)
-      rubyzip (>= 0.9.6.1)
-    typhoeus (0.4.2)
-      ffi (~> 1.0)
-      mime-types (~> 1.18)
+    bind-it (0.2.0)
+      rjb
+    bson (1.6.4)
+    bson_ext (1.6.4)
+      bson (~> 1.6.4)
+    mongo (1.6.4)
+      bson (~> 1.6.4)
+    rjb (1.4.0)
+    stanford-core-nlp (0.3.2)
+      bind-it
+    uuidtools (2.1.2)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
-  alchemy_api
-  treat
+  bson_ext
+  mongo
+  stanford-core-nlp
+  uuidtools
