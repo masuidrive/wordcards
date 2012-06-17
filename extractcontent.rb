@@ -50,7 +50,7 @@ module ExtractContent
     return ["", extract_title(html)] if html =~ /<\/frameset>|<meta\s+http-equiv\s*=\s*["']?refresh['"]?[^>]*url/i
     html.gsub!(/\n/,' ')
     html.gsub!(/(<[\/ \t]*(br|div|p|dd|dt|dl|ul|ol|li|h1|h2|h3|h4|h5|h6)[> \t]{0,1})/, "\n\\1")
-puts html
+
     # option parameters
     opt = if opt then @default.merge(opt) else @default end
     b = binding   # local_variable_set があれば……
@@ -103,7 +103,7 @@ puts html
       not_body_rate = block.scan(waste_expressions).length + block.scan(/amazon[a-z0-9\.\/\-\?&]+-22/i).length / 2.0
       c *= (0.72 ** not_body_rate) if not_body_rate>0
       c1 = c * continuous
-      puts "----- #{c}*#{continuous}=#{c1} #{notlinked.length} \n#{strip_tags(block)[0,100]}\n" if debug
+      STDERR.puts "----- #{c}*#{continuous}=#{c1} #{notlinked.length} \n#{strip_tags(block)[0,100]}\n" if debug
 
       # ブロック抽出＆スコア加算
       if c1 > threshold
@@ -120,8 +120,6 @@ puts html
     bodylist << [body, score]
     body = bodylist.inject{|a,b| if a[1]>=b[1] then a else b end }.first
     body = nil if body == ''
-    puts ">>>>"
-    p body
     [body ? strip_tags(body) : nil, title]
   end
 
@@ -199,8 +197,7 @@ puts html
     self::CHARREF.each{|ref, c| st.gsub!(ref, c) }
     require 'cgi'
     st = CGI.unescapeHTML(st)
-    p st
-    st.gsub(/[ \t]+/, " ")
+    st.gsub!(/[ \t]+/, " ")
     st.gsub(/\n\s*/, "\n")
   end
 
