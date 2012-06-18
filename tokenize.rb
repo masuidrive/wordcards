@@ -3,15 +3,15 @@
 require 'rubygems'
 require 'stanford-core-nlp'
 require 'uuidtools'
+require './extractcontent'
 
 StanfordCoreNLP.jvm_args = ['-Xmx3g']
 StanfordCoreNLP.use(:english)
 
-
 class TextTokenizer
   @@pipeline = StanfordCoreNLP.load(:tokenize, :ssplit, :pos, :lemma, :parse)
     
-  def tokenize(original_text, title="No titled")
+  def tokenize(original_text)
     original_text = original_text.split(".") unless original_text.is_a?(Array)
 
     document = {
@@ -40,7 +40,7 @@ class TextTokenizer
           token_end = token.get(:character_offset_end).to_s.to_i - sentence_begin
 
           base_form.downcase! if /^[A-Z][a-z]+$/.match(base_form)
-          if /^[a-z]{3,24}$/i.match(base_form)
+          if /^[a-z]{2,24}$/i.match(base_form)
             token_data = {
               :token_id => UUIDTools::UUID.timestamp_create,
               :original_text => token.get(:original_text).to_s,
@@ -61,9 +61,29 @@ class TextTokenizer
 end
 
 if $0 == __FILE__
-  # usage: echo "This is a pen" | ruby tokenizer.rb "Sample"
+  if ARGV.empty?
+    puts "usage: ./#{__FILE__} URL"
+    exit
+  end
+
+  def is_html?(str)
+    /<\s*html/im.match(str)
+  end
+
   require 'json'
+  url = ARGV[0]
+
+  text = STDIN.read.encode("UTF-8", :invalid => :replace, :undef => :replace, :replace => ' ')
+  body, title = text, nil
+  if is_html?(text)
+    body, title = ExtractContent::analyse(body)
+    body = body.split(/\r*\n+/)
+  end
+
   tokenizer = TextTokenizer.new
-  doc = tokenizer.tokenize(STDIN.read)
-  puts doc.to_json
+  doc = tokenizer.tokenize(body)
+  doc[:url] = url
+  doc[:title] = title
+
+  print JSON.generate(doc)
 end

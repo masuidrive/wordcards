@@ -1,34 +1,12 @@
+#!/usr/bin/env ruby
 require 'rubygems'
 require './extractcontent'
 require './tokenize'
-require './stop_words'
-require 'mongo'
 require 'open-uri'
 
-@conn = Mongo::Connection.new
-@db   = @conn['sample1']
+# url = "http://www.ruby-lang.org/en/"
 
-@docs_coll = @db['documents']
-@sentences_coll = @db['sentences']
-@tokens_coll = @db['tokens']
-@words_coll = @db['words']
-@word_counters_coll = @db['word_counters']
-
-=begin
-@docs_coll.remove
-@sentences_coll.remove
-@tokens_coll.remove
-@words_coll.remove
-@word_counters_coll.remove
-@word_counters_coll.create_index(:word, :unique => true)
-@word_counters_coll.create_index([[:counter, -1]])
-=end
-
-#url = "http://guides.rubyonrails.org/getting_started.html"
-#url = "https://github.com/rails/rails/blob/master/activerecord/CHANGELOG.md"
-#url = "https://raw.github.com/ruby/ruby/trunk/ChangeLog"
-url = "http://www.ruby-lang.org/en/"
-#url = 'sample1.txt'
+url = ARGV[0]
 
 html = open(url).read.encode("UTF-8", :invalid => :replace, :undef => :replace, :replace => ' ')
 original_text, title = ExtractContent::analyse(html)
@@ -37,10 +15,6 @@ if original_text
 else
   original_text = html
 end
-STDERR.puts "--------"
-STDERR.puts original_text.join("\n")
-STDERR.puts "--------"
-STDERR.puts ""
 
 tokenizer = TextTokenizer.new
 doc = tokenizer.tokenize(original_text, title)
