@@ -26,8 +26,8 @@ require 'open-uri'
 
 #url = "http://guides.rubyonrails.org/getting_started.html"
 #url = "https://github.com/rails/rails/blob/master/activerecord/CHANGELOG.md"
-url = "https://raw.github.com/ruby/ruby/trunk/ChangeLog"
-#url = "http://www.ruby-lang.org/en/"
+#url = "https://raw.github.com/ruby/ruby/trunk/ChangeLog"
+url = "http://www.ruby-lang.org/en/"
 #url = 'sample1.txt'
 
 html = open(url).read.encode("UTF-8", :invalid => :replace, :undef => :replace, :replace => ' ')
@@ -44,6 +44,12 @@ STDERR.puts ""
 
 tokenizer = TextTokenizer.new
 doc = tokenizer.tokenize(original_text, title)
+doc[:url] = url
+
+require 'json'
+puts JSON.generate(doc)
+
+=begin
 doc_id = @docs_coll.insert({:url => url, :title => title})
 
 doc[:sentences].each do |s|
@@ -85,3 +91,4 @@ doc[:sentences].each do |s|
   end
   @sentences_coll.insert s
 end
+=end

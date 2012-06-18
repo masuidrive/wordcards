@@ -1,5 +1,8 @@
+#!/bin/env ruby
+
 require 'rubygems'
 require 'stanford-core-nlp'
+require 'uuidtools'
 
 StanfordCoreNLP.jvm_args = ['-Xmx3g']
 StanfordCoreNLP.use(:english)
@@ -11,7 +14,9 @@ class TextTokenizer
   def tokenize(original_text, title="No titled")
     original_text = original_text.split(".") unless original_text.is_a?(Array)
 
-    document = {}
+    document = {
+      :document_id => UUIDTools::UUID.timestamp_create
+    }
     sentences = []
 
     original_text.each do |ot|
@@ -24,6 +29,7 @@ class TextTokenizer
         sentence_text = ot[sentence_begin...sentence_end]
         
         sentence_data = {
+          :sentence_id => UUIDTools::UUID.timestamp_create,
           :original_text => sentence_text,
           :tokens => []
         }
@@ -36,6 +42,7 @@ class TextTokenizer
           base_form.downcase! if /^[A-Z][a-z]+$/.match(base_form)
           if /^[a-z]{3,24}$/i.match(base_form)
             token_data = {
+              :token_id => UUIDTools::UUID.timestamp_create,
               :original_text => token.get(:original_text).to_s,
               :base_form => base_form,
               :part_of_speech => token.get(:part_of_speech).to_s,
