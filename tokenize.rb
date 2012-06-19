@@ -1,4 +1,5 @@
 #!/bin/env ruby
+# mapper
 
 require 'rubygems'
 require 'stanford-core-nlp'
@@ -30,11 +31,13 @@ class TextTokenizer
         :tokens => []
       }
 
-      pos = 0
+      index = 0
+      words = Hash.new(0)
       sentence.get(:tokens).each do |token|
         base_form = token.get(:lemma).to_s
         token_begin = token.get(:character_offset_begin).to_s.to_i - sentence_begin
         token_end = token.get(:character_offset_end).to_s.to_i - sentence_begin
+        words[base_form] += 1
 
         base_form.downcase! if /^[A-Z][a-z]+$/.match(base_form)
         if /^[a-z]{2,24}$/i.match(base_form)
@@ -43,12 +46,13 @@ class TextTokenizer
             :original_text => token.get(:original_text).to_s,
             :base_form => base_form,
             :part_of_speech => token.get(:part_of_speech).to_s,
-            :position => pos,
+            :index => index,
+            :count => words[base_form],
             :token_begin => token_begin,
             :token_length => token_end - token_begin        
           }
           sentence_data[:tokens] << token_data
-          pos += 1
+          index += 1
         end
       end
       sentences << sentence_data
@@ -66,7 +70,7 @@ if $0 == __FILE__
       puts ["sentence", doc_id, sentence[:sentence_id], sentence[:original_text]].join("\t")
       sentence[:tokens].each do |token|
         puts (["token", doc_id] +
-          [:sentence_id, :token_id, :base_form, :part_of_speech, :position, :token_begin, :token_length].map { |key|
+          [:sentence_id, :token_id, :base_form, :part_of_speech, :index, :count, :token_begin, :token_length].map { |key|
             token[key]
           }).join("\t")
       end

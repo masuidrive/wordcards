@@ -1,4 +1,5 @@
 #!/bin/env ruby
+# mapper
 
 require 'rubygems'
 require 'uuidtools'
@@ -14,7 +15,6 @@ def utf8normalize(str)
   $ic ||= Iconv.new('UTF-8//IGNORE', 'UTF-8')
   $ic.iconv(str)
 end
-
 
 url_list = utf8normalize(STDIN.read)
 
