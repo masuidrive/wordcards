@@ -3,9 +3,12 @@
 require 'rubygems'
 require 'stanford-core-nlp'
 require 'uuidtools'
-require './extractcontent'
+
+jar_path = File.expand_path('./nlp/')+"/"
 
 StanfordCoreNLP.jvm_args = ['-Xmx3g']
+StanfordCoreNLP.jar_path = jar_path
+StanfordCoreNLP.model_path = jar_path
 StanfordCoreNLP.use(:english)
 
 class TextTokenizer
@@ -71,6 +74,7 @@ if $0 == __FILE__
   end
 
   require 'json'
+  require './extractcontent'
   url = ARGV[0]
 
   text = STDIN.read.encode("UTF-8", :invalid => :replace, :undef => :replace, :replace => ' ')
